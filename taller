@@ -1,0 +1,284 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_LIBROS 10
+#define MAX_TITULO 100
+#define MAX_AUTOR 50
+
+typedef struct {
+    int id;
+    char titulo[MAX_TITULO];
+    char autor[MAX_AUTOR];
+    int anio;
+    char estado[20]; // "Disponible" o "Prestado"
+} Libro;
+
+// Funciones del programa
+void mostrarMenu();
+void registrarLibro(Libro biblioteca[], int *contador);
+void mostrarLibros(Libro biblioteca[], int contador);
+void mostrarLibro(Libro libro);
+void buscarLibro(Libro biblioteca[], int contador);
+void actualizarEstado(Libro biblioteca[], int contador);
+void eliminarLibro(Libro biblioteca[], int *contador);
+void limpiarBuffer();
+
+int main() {
+    Libro biblioteca[MAX_LIBROS];
+    int contador = 0;
+    int opcion;
+    
+    do {
+        mostrarMenu();
+        printf("Opción: ");
+        scanf("%d", &opcion);
+        limpiarBuffer(); // Limpiar el buffer después de leer un número
+        
+        switch(opcion) {
+            case 1:
+                registrarLibro(biblioteca, &contador);
+                break;
+            case 2:
+                mostrarLibros(biblioteca, contador);
+                break;
+            case 3:
+                buscarLibro(biblioteca, contador);
+                break;
+            case 4:
+                actualizarEstado(biblioteca, contador);
+                break;
+            case 5:
+                eliminarLibro(biblioteca, &contador);
+                break;
+            case 6:
+                printf("Saliendo del sistema...\n");
+                break;
+            default:
+                printf("Opción inválida. Intente nuevamente.\n");
+        }
+        printf("\n");
+    } while(opcion != 6);
+    
+    return 0;
+}
+
+void mostrarMenu() {
+    printf("\n--- SISTEMA DE GESTIÓN DE BIBLIOTECA ---\n");
+    printf("1. Registrar libro\n");
+    printf("2. Mostrar todos los libros\n");
+    printf("3. Buscar libro\n");
+    printf("4. Actualizar estado\n");
+    printf("5. Eliminar libro\n");
+    printf("6. Salir\n");
+}
+
+void limpiarBuffer() {
+    while(getchar() != '\n');
+}
+
+void registrarLibro(Libro biblioteca[], int *contador) {
+    if (*contador >= MAX_LIBROS) {
+        printf("La biblioteca está llena (máximo %d libros).\n", MAX_LIBROS);
+        return;
+    }
+    
+    Libro nuevo;
+    
+    printf("\n--- REGISTRAR NUEVO LIBRO ---\n");
+    printf("Ingrese ID del libro: ");
+    scanf("%d", &nuevo.id);
+    limpiarBuffer();
+    
+    // Validar ID único
+    for (int i = 0; i < *contador; i++) {
+        if (biblioteca[i].id == nuevo.id) {
+            printf("Error: El ID %d ya existe.\n", nuevo.id);
+            return;
+        }
+    }
+    
+    printf("Ingrese título: ");
+    fgets(nuevo.titulo, MAX_TITULO, stdin);
+    nuevo.titulo[strcspn(nuevo.titulo, "\n")] = '\0'; // Eliminar el salto de línea
+    
+    printf("Ingrese autor: ");
+    fgets(nuevo.autor, MAX_AUTOR, stdin);
+    nuevo.autor[strcspn(nuevo.autor, "\n")] = '\0';
+    
+    printf("Ingrese año de publicación: ");
+    scanf("%d", &nuevo.anio);
+    limpiarBuffer();
+    
+    strcpy(nuevo.estado, "Disponible");
+    
+    biblioteca[*contador] = nuevo;
+    (*contador)++;
+    
+    printf("\nLibro registrado exitosamente:\n");
+    mostrarLibro(nuevo);
+}
+
+void mostrarLibros(Libro biblioteca[], int contador) {
+    if (contador == 0) {
+        printf("No hay libros registrados en la biblioteca.\n");
+        return;
+    }
+    
+    printf("\n--- LISTA DE LIBROS (%d) ---\n", contador);
+    printf("%-5s %-30s %-20s %-8s %-12s\n", 
+           "ID", "Título", "Autor", "Año", "Estado");
+    printf("------------------------------------------------------------\n");
+    
+    for (int i = 0; i < contador; i++) {
+        printf("%-5d %-30s %-20s %-8d %-12s\n",
+               biblioteca[i].id,
+               biblioteca[i].titulo,
+               biblioteca[i].autor,
+               biblioteca[i].anio,
+               biblioteca[i].estado);
+    }
+}
+
+void mostrarLibro(Libro libro) {
+    printf("\n--- INFORMACIÓN DEL LIBRO ---\n");
+    printf("ID: %d\n", libro.id);
+    printf("Título: %s\n", libro.titulo);
+    printf("Autor: %s\n", libro.autor);
+    printf("Año de publicación: %d\n", libro.anio);
+    printf("Estado: %s\n", libro.estado);
+}
+
+void buscarLibro(Libro biblioteca[], int contador) {
+    if (contador == 0) {
+        printf("No hay libros registrados en la biblioteca.\n");
+        return;
+    }
+    
+    int opcion;
+    printf("\n--- BUSCAR LIBRO ---\n");
+    printf("1. Buscar por ID\n");
+    printf("2. Buscar por título\n");
+    printf("Opción: ");
+    scanf("%d", &opcion);
+    limpiarBuffer();
+    
+    if (opcion == 1) {
+        int id;
+        printf("Ingrese ID del libro: ");
+        scanf("%d", &id);
+        limpiarBuffer();
+        
+        for (int i = 0; i < contador; i++) {
+            if (biblioteca[i].id == id) {
+                mostrarLibro(biblioteca[i]);
+                return;
+            }
+        }
+        printf("No se encontró un libro con ID %d.\n", id);
+        
+    } else if (opcion == 2) {
+        char titulo[MAX_TITULO];
+        printf("Ingrese título o parte del título: ");
+        fgets(titulo, MAX_TITULO, stdin);
+        titulo[strcspn(titulo, "\n")] = '\0';
+        
+        int encontrados = 0;
+        for (int i = 0; i < contador; i++) {
+            if (strstr(biblioteca[i].titulo, titulo) != NULL) {
+                mostrarLibro(biblioteca[i]);
+                encontrados++;
+            }
+        }
+        
+        if (encontrados == 0) {
+            printf("No se encontraron libros con '%s' en el título.\n", titulo);
+        } else {
+            printf("Se encontraron %d libros.\n", encontrados);
+        }
+        
+    } else {
+        printf("Opción inválida.\n");
+    }
+}
+
+void actualizarEstado(Libro biblioteca[], int contador) {
+    if (contador == 0) {
+        printf("No hay libros registrados en la biblioteca.\n");
+        return;
+    }
+    
+    int id;
+    printf("\n--- ACTUALIZAR ESTADO ---\n");
+    printf("Ingrese ID del libro: ");
+    scanf("%d", &id);
+    limpiarBuffer();
+    
+    for (int i = 0; i < contador; i++) {
+        if (biblioteca[i].id == id) {
+            printf("Libro encontrado:\n");
+            mostrarLibro(biblioteca[i]);
+            
+            printf("\nSeleccione nuevo estado:\n");
+            printf("1. Disponible\n");
+            printf("2. Prestado\n");
+            printf("Opción: ");
+            
+            int opcion;
+            scanf("%d", &opcion);
+            limpiarBuffer();
+            
+            if (opcion == 1) {
+                strcpy(biblioteca[i].estado, "Disponible");
+                printf("Estado actualizado a 'Disponible'.\n");
+            } else if (opcion == 2) {
+                strcpy(biblioteca[i].estado, "Prestado");
+                printf("Estado actualizado a 'Prestado'.\n");
+            } else {
+                printf("Opción inválida. No se realizaron cambios.\n");
+            }
+            return;
+        }
+    }
+    
+    printf("No se encontró un libro con ID %d.\n", id);
+}
+
+void eliminarLibro(Libro biblioteca[], int *contador) {
+    if (*contador == 0) {
+        printf("No hay libros registrados en la biblioteca.\n");
+        return;
+    }
+    
+    int id;
+    printf("\n--- ELIMINAR LIBRO ---\n");
+    printf("Ingrese ID del libro a eliminar: ");
+    scanf("%d", &id);
+    limpiarBuffer();
+    
+    for (int i = 0; i < *contador; i++) {
+        if (biblioteca[i].id == id) {
+            printf("Libro a eliminar:\n");
+            mostrarLibro(biblioteca[i]);
+            
+            printf("\n¿Está seguro que desea eliminar este libro? (s/n): ");
+            char confirmacion;
+            scanf("%c", &confirmacion);
+            limpiarBuffer();
+            
+            if (tolower(confirmacion) == 's') {
+                // Mover todos los libros posteriores una posición hacia atrás
+                for (int j = i; j < *contador - 1; j++) {
+                    biblioteca[j] = biblioteca[j + 1];
+                }
+                (*contador)--;
+                printf("Libro eliminado exitosamente.\n");
+            } else {
+                printf("Eliminación cancelada.\n");
+            }
+            return;
+        }
+    }
+    
+    printf("No se encontró un libro con ID %d.\n", id);
+}
